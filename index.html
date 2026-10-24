@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#ffffff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<title>Collect payment</title>
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+
+  html, body {
+    height: 100%;
+    width: 100%;
+    background: #ffffff;
+    overflow: hidden;
+    touch-action: pan-y;
+  }
+
+  .header {
+    display: flex;
+    align-items: center;
+    padding: 18px 16px 18px 12px;
+    position: relative;
+    z-index: 10;
+  }
+
+  .close-btn {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: #000000;
+    cursor: pointer;
+    font-weight: 300;
+    line-height: 1;
+  }
+
+  .title {
+    font-size: 20px;
+    font-weight: 600;
+    color: #000000;
+    margin-left: 4px;
+    letter-spacing: -0.2px;
+  }
+
+  .content {
+    padding: 4px 16px 0 16px;
+    height: calc(100% - 130px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .card {
+    background: #f4f4f4;
+    border-radius: 16px;
+    padding: 18px 16px 16px 16px;
+    position: relative;
+    cursor: pointer;
+  }
+
+  .name-line {
+    font-size: 15px;
+    color: #6e6e6e;
+    margin-bottom: 4px;
+    user-select: none;
+    font-weight: 400;
+  }
+
+  .amount-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+
+  .amount {
+    font-size: 36px;
+    font-weight: 700;
+    color: #000000;
+    letter-spacing: -1px;
+    user-select: none;
+    line-height: 1.15;
+  }
+
+  .chevron {
+    font-size: 24px;
+    color: #b0b0b0;
+    font-weight: 300;
+    margin-right: 2px;
+  }
+
+  .tags {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: #e8f3fc;
+    color: #1a73e8;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 6px 11px 6px 9px;
+    border-radius: 16px;
+    line-height: 1;
+  }
+
+  .tag svg {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+  }
+
+  .bottom-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 10px 16px 24px 16px;
+    background: #ffffff;
+  }
+
+  .complete-btn {
+    width: 100%;
+    height: 52px;
+    background: #f0f0f0;
+    border-radius: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    border: none;
+    font-size: 16px;
+    font-weight: 500;
+    color: #000000;
+    cursor: pointer;
+  }
+
+  .complete-btn .icon {
+    position: absolute;
+    left: 4px;
+    width: 44px;
+    height: 44px;
+    background: #000000;
+    border-radius: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .complete-btn .icon svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  .edit-input {
+    border: none;
+    outline: none;
+    background: transparent;
+    font-family: inherit;
+  }
+
+  .name-input {
+    font-size: 15px;
+    color: #6e6e6e;
+    width: 110px;
+    border-bottom: 1px dashed #999;
+    padding: 0;
+  }
+
+  .amount-input {
+    font-size: 36px;
+    font-weight: 700;
+    color: #000000;
+    letter-spacing: -1px;
+    width: 170px;
+    border-bottom: 1px dashed #999;
+    padding: 0;
+  }
+
+  .ptr {
+    position: absolute;
+    top: 60px;
+    left: 0;
+    right: 0;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.2s;
+    pointer-events: none;
+    z-index: 5;
+  }
+
+  .ptr.visible {
+    opacity: 1;
+  }
+
+  .ptr-spinner {
+    width: 20px;
+    height: 20px;
+    border: 2.5px solid #e0e0e0;
+    border-top-color: #1a73e8;
+    border-radius: 50%;
+    animation: spin 0.65s linear infinite;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  .tap-hint {
+    position: fixed;
+    bottom: 90px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.78);
+    color: #fff;
+    font-size: 13px;
+    padding: 8px 16px;
+    border-radius: 20px;
+    opacity: 0;
+    transition: opacity 0.25s;
+    pointer-events: none;
+    z-index: 200;
+    white-space: nowrap;
+  }
+
+  .tap-hint.show {
+    opacity: 1;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="close-btn" id="closeBtn">✕</div>
+  <div class="title">Collect payment</div>
+</div>
+
+<div class="ptr" id="ptr">
+  <div class="ptr-spinner"></div>
+</div>
+
+<div class="content" id="content">
+  <div class="card" id="card">
+    <div class="name-line" id="nameLine">
+      <span class="name" id="nameDisplay">Ananya</span> will pay
+    </div>
+
+    <div class="amount-row">
+      <div class="amount" id="amountDisplay">₹215.66</div>
+      <div class="chevron">›</div>
+    </div>
+
+    <div class="tags">
+      <div class="tag">
+        <svg viewBox="0 0 24 24" fill="#1a73e8">
+          <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm0 18c-4.4 0-8-3.6-8-8s3.6-8 8-8 8 3.6 8 8-3.6 8-8 8zm.5-13H11v6l5.2 3.2.8-1.3-4.5-2.7V7z"/>
+        </svg>
+        Wait Time
+      </div>
+      <div class="tag">
+        <svg viewBox="0 0 24 24" fill="#1a73e8">
+          <path d="M12 2L4 12l8 10 8-10L12 2zm0 3.5L17.5 12 12 18.5 6.5 12 12 5.5z"/>
+        </svg>
+        Promotion
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="bottom-bar">
+  <button class="complete-btn" id="completeBtn">
+    <div class="icon">
+      <svg viewBox="0 0 24 24" fill="#ffffff">
+        <path d="M4 11h12.17l-5.59-5.59L12 4l8 8-8 8-1.41-1.41L16.17 13H4v-2z"/>
+      </svg>
+    </div>
+    Complete Parcel
+  </button>
+</div>
+
+<div class="tap-hint" id="tapHint">Tap 5 times to edit</div>
+
+<script>
+  const ORIGINAL_NAME = "Ananya";
+  const ORIGINAL_AMOUNT = "215.66";
+
+  let currentName = ORIGINAL_NAME;
+  let currentAmount = ORIGINAL_AMOUNT;
+
+  let tapCount = 0;
+  let isEditing = false;
+  let lastTapTime = 0;
+
+  const card = document.getElementById('card');
+  const nameLine = document.getElementById('nameLine');
+  const amountDisplay = document.getElementById('amountDisplay');
+  const tapHint = document.getElementById('tapHint');
+  const content = document.getElementById('content');
+  const ptr = document.getElementById('ptr');
+
+  function showHint(text) {
+    tapHint.textContent = text;
+    tapHint.classList.add('show');
+    clearTimeout(window._hintTimer);
+    window._hintTimer = setTimeout(() => tapHint.classList.remove('show'), 1600);
+  }
+
+  card.addEventListener('click', function(e) {
+    if (isEditing) return;
+
+    const now = Date.now();
+    if (now - lastTapTime > 1400) tapCount = 0;
+    lastTapTime = now;
+    tapCount++;
+
+    if (tapCount < 5) {
+      showHint(`Tap ${5 - tapCount} more time${5 - tapCount > 1 ? 's' : ''} to edit`);
+    } else {
+      unlockEdit();
+    }
+  });
+
+  function unlockEdit() {
+    isEditing = true;
+    tapCount = 0;
+    showHint("Edit Name & Amount");
+
+    nameLine.innerHTML = `<input type="text" class="edit-input name-input" id="nameInput" value="${currentName}" maxlength="18" spellcheck="false"> will pay`;
+    amountDisplay.innerHTML = `₹<input type="text" class="edit-input amount-input" id="amountInput" value="${currentAmount}" inputmode="decimal" spellcheck="false">`;
+
+    const nameInput = document.getElementById('nameInput');
+    const amountInput = document.getElementById('amountInput');
+    nameInput.focus();
+    nameInput.select();
+
+    function saveEdits() {
+      if (!isEditing) return;
+      let newName = nameInput.value.trim() || ORIGINAL_NAME;
+      let newAmt = amountInput.value.trim().replace(/[^\d.]/g, '');
+      if (!newAmt || isNaN(parseFloat(newAmt))) newAmt = ORIGINAL_AMOUNT;
+
+      if (newAmt.includes('.')) {
+        const p = newAmt.split('.');
+        newAmt = p[0] + '.' + (p[1] || '00').substring(0, 2).padEnd(2, '0');
+      } else {
+        newAmt = newAmt + '.00';
+      }
+
+      currentName = newName;
+      currentAmount = newAmt;
+      isEditing = false;
+
+      nameLine.innerHTML = `<span class="name" id="nameDisplay">${currentName}</span> will pay`;
+      amountDisplay.innerHTML = `₹${currentAmount}`;
+    }
+
+    nameInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter') amountInput.focus();
+    });
+    amountInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter') saveEdits();
+    });
+
+    setTimeout(() => {
+      const handler = function(ev) {
+        if (!card.contains(ev.target)) {
+          saveEdits();
+          document.removeEventListener('click', handler);
+        }
+      };
+      document.addEventListener('click', handler);
+    }, 80);
+  }
+
+  let startY = 0, pulling = false, pullDistance = 0;
+
+  content.addEventListener('touchstart', e => {
+    if (content.scrollTop <= 0) {
+      startY = e.touches[0].clientY;
+      pulling = true;
+    }
+  }, {passive: true});
+
+  content.addEventListener('touchmove', e => {
+    if (!pulling) return;
+    pullDistance = e.touches[0].clientY - startY;
+    if (pullDistance > 15) {
+      ptr.classList.add('visible');
+      content.style.transform = `translateY(${Math.min(pullDistance * 0.35, 55)}px)`;
+    }
+  }, {passive: true});
+
+  content.addEventListener('touchend', () => {
+    if (pullDistance > 65) doRefresh();
+    pulling = false;
+    pullDistance = 0;
+    content.style.transform = '';
+    ptr.classList.remove('visible');
+  });
+
+  content.addEventListener('mousedown', e => {
+    if (content.scrollTop <= 0) {
+      startY = e.clientY;
+      pulling = true;
+    }
+  });
+  content.addEventListener('mousemove', e => {
+    if (!pulling) return;
+    pullDistance = e.clientY - startY;
+    if (pullDistance > 15) {
+      ptr.classList.add('visible');
+      content.style.transform = `translateY(${Math.min(pullDistance * 0.35, 55)}px)`;
+    }
+  });
+  content.addEventListener('mouseup', () => {
+    if (pullDistance > 65) doRefresh();
+    pulling = false;
+    pullDistance = 0;
+    content.style.transform = '';
+    ptr.classList.remove('visible');
+  });
+
+  function doRefresh() {
+    currentName = ORIGINAL_NAME;
+    currentAmount = ORIGINAL_AMOUNT;
+    isEditing = false;
+    tapCount = 0;
+
+    nameLine.innerHTML = `<span class="name" id="nameDisplay">${ORIGINAL_NAME}</span> will pay`;
+    amountDisplay.innerHTML = `₹${ORIGINAL_AMOUNT}`;
+    showHint("Refreshed to original");
+  }
+</script>
+<script>
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("./sw.js").catch(e => console.log(e));
+}
+</script>
+</body>
+</html>
